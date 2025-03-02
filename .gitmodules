@@ -1,0 +1,3 @@
+[submodule "SpeechStation.Kokoro/weights"]
+	path = SpeechStation.Kokoro/weights
+	url = https://huggingface.co/onnx-community/Kokoro-82M-v1.0-ONNX

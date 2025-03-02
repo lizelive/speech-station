@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Blank Page</title>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/ort.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/dist/bundle.min.js"></script>
+</head>
+
+<body>
+
+    <script type="module">
+        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
+
+        let url = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/resolve/main/jfk.wav';
+
+        // Create translation pipeline
+        // 'Xenova/whisper-tiny.en'
+        // 'distil-whisper/distil-medium.en'
+        // 'onnx-community/moonshine-base-ONNX'
+        let transcriber = await pipeline('automatic-speech-recognition', 'distil-whisper/distil-medium.en', {
+            quantized: true, 
+            device: "webgpu"
+        });
+
+
+        const VAD = "VAD";
+        const ASR= 'ASR';
+        
+        async function doTranscribe(audio) {
+            
+            let withLock = async () => {
+                console.time(ASR);
+                console.timeLog(ASR, "doTranscribe", audio.length);
+                let output = await transcriber(audio, { return_timestamps: true });
+                console.timeLog(ASR, "doneTranscribe", output);
+                console.timeEnd(ASR);
+                return output;
+            }
+            
+            return await navigator.locks.request(ASR, withLock);    
+        }
+        doTranscribe(url);
+        
+
+        const myvad = await vad.MicVAD.new({
+            onSpeechStart: () => {
+                console.log("Speech start detected")
+            },
+            model: "v5",
+            onSpeechEnd: (audio) => {
+                // do something with `audio` (Float32Array of audio samples at sample rate 16000)...
+                console.log(VAD, "onSpeechEnd", audio.length / 16000);
+                doTranscribe(audio);
+            }
+        });
+
+        myvad.start()
+    </script>
+
+</body>
+
+</html>

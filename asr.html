@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Blank Page</title>
+</head>
+
+<body>
+
+    <script type="module">
+        import { pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.3';
+
+        let url = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/resolve/main/jfk.wav';
+
+        // Create translation pipeline
+        // 'Xenova/whisper-tiny.en'
+        let transcriber = await pipeline('automatic-speech-recognition', 'distil-whisper/distil-medium.en', { quantized: true,  device: "webgpu" });
+        console.time('transcriber');
+        let output = await transcriber(url, { return_timestamps: true });
+        console.timeEnd('transcriber');
+        console.log(output);
+    </script>
+
+    <!-- <script type="module">
+        import { MicVAD } from 'https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.22/+esm'
+        const VAD = "VAD";
+        console.time(VAD)
+        const myvad = await MicVAD.new({
+            onSpeechEnd: (audio) => {
+                // do something with `audio` (Float32Array of audio samples at sample rate 16000)...
+                console.timeLog(VAD, "onSpeechEnd")
+            },
+        })
+        myvad.start()
+        // 
+    </script> -->
+</body>
+
+</html>

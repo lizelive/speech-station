@@ -1,0 +1,90 @@
+﻿
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
+using Microsoft.ML.OnnxRuntime;
+using Microsoft.ML.OnnxRuntime.Tensors;
+
+var modelPath = @"C:\Users\me\source\repos\speech-station\SpeechStation.Kokoro\weights\onnx\model.onnx";
+var voicePath = @"C:\Users\me\source\repos\speech-station\SpeechStation.Kokoro\weights\voices\af.bin";
+
+long[] tokens = [50, 157, 43, 135, 16, 53, 135, 46, 16, 43, 102, 16, 56, 156, 57, 135, 6, 16, 102, 62, 61, 16, 70, 56, 16, 138, 56, 156, 72, 56, 61, 85, 123, 83, 44, 83, 54, 16, 53, 65, 156, 86, 61, 62, 131, 83, 56, 4, 16, 54, 156, 43, 102, 53, 16, 156, 72, 61, 53, 102, 112, 16, 70, 56, 16, 138, 56, 44, 156, 76, 158, 123, 56, 16, 62, 131, 156, 43, 102, 54, 46, 16, 102, 48, 16, 81, 47, 102, 54, 16, 54, 156, 51, 158, 46, 16, 70, 16, 92, 156, 135, 46, 16, 54, 156, 43, 102, 48, 4, 16, 81, 47, 102, 16, 50, 156, 72, 64, 83, 56, 62, 16, 156, 51, 158, 64, 83, 56, 16, 44, 157, 102, 56, 16, 44, 156, 76, 158, 123, 56, 4];
+
+// load voice
+var voiceBytes = File.ReadAllBytes(voicePath);
+// get the relevant data
+
+// setup tensors
+using var session = new InferenceSession(modelPath);
+
+// setup inputs
+
+var input_ids = OrtValue.CreateTensorValueFromMemory([0, .. tokens, 0], [1, tokens.Length + 2]);
+
+int style_size = 256;
+
+var offset = 4 * style_size * tokens.Length;
+var styleBytes = voiceBytes[offset..(offset + style_size * 4)];
+float[] styleFloats = new float[style_size];
+Buffer.BlockCopy(styleBytes, 0, styleFloats, 0, styleBytes.Length);
+var style = OrtValue.CreateTensorValueFromMemory(styleFloats, [1, style_size]);
+
+var speed = OrtValue.CreateTensorValueFromMemory([1f], [1]);
+
+var inputs = new Dictionary<string, OrtValue>
+{
+    {"input_ids", input_ids},
+    {"style", style},
+    {"speed", speed}
+};
+
+
+using var runOptions = new RunOptions();
+
+// setup outputs
+
+var outputNames = new[] { "waveform" };
+
+var results = session.Run(runOptions, inputs, outputNames);
+
+
+// write output to wav
+
+var waveform = results[0].GetTensorDataAsSpan<float>();
+
+int sampleRate = 22050;
+
+// save to file
+
+using (var writer = new BinaryWriter(File.OpenWrite("output.wav")))
+{
+    int dataSize = waveform.Length * sizeof(short);
+
+    int fileSize = 44 + dataSize;
+
+
+    writer.Write("RIFF"u8);// write header
+    writer.Write(fileSize); // file size
+    writer.Write("WAVE"u8);
+    writer.Write("fmt "u8);
+    writer.Write(16); // size of fmt chunk
+    writer.Write((short)1); // PCM format
+    writer.Write((short)1); // number of channels
+    writer.Write(sampleRate); // sample rate
+    writer.Write(sampleRate * sizeof(short)); // byte rate
+    writer.Write((short)sizeof(short)); // block align
+    writer.Write((short)(sizeof(short) * 8)); // bits per sample
+    writer.Write("data"u8);
+    writer.Write(dataSize); // data size
+
+
+    // write data
+    foreach (var sample in waveform)
+    {
+        writer.Write(short.CreateSaturating(sample * short.MaxValue));
+    }
+
+    // update header
+
+    Debug.Assert(fileSize == (int)writer.BaseStream.Length);
+}

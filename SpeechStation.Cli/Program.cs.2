@@ -1,0 +1,23 @@
+﻿using System.Speech.Recognition;
+
+// private SpeechRecognitionEngine SelectRecognizer(CultureInfo requiredCulture, string requiredId)   
+// {  
+//   // Select based on a specific recognizer configuration  
+//   SpeechRecognitionEngine speechRecognitionEngine=null;  
+//   foreach (RecognizerInfo config in SpeechRecognitionEngine.InstalledRecognizers())   
+//   {  
+//     if (config.Culture.Equals(requiredCulture) && config.Id== requiredId)   
+//     {  
+//       speechRecognitionEngine = new SpeechRecognitionEngine(config);  
+//       break;  
+//     }  
+//   }  
+//   return speechRecognitionEngine;  
+// }
+
+  foreach (RecognizerInfo config in SpeechRecognitionEngine.InstalledRecognizers())   
+  { 
+    Console.WriteLine("Name: {0}, Culture: {1}, Id: {2}", config.Name, config.Culture, config.Id);
+  }
+
+  

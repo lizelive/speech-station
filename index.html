@@ -1,0 +1,46 @@
+<title>HTML 5 Boilerplate</title>
+</head>
+
+<body>
+    <script type="module">
+        if (!('SpeechRecognition' in window)) {
+            window.SpeechRecognition = webkitSpeechRecognition;
+        }
+        // Check for browser compatibility
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;  // Keep listening until stopped
+        recognition.interimResults = false;  // Only handle final results
+        // recognition.maxAlternatives = 2;  // Maximum number of alternatives to provide
+        recognition.lang = 'en-US';  // Language settings
+
+        // When recognition gets a result
+        recognition.onresult = function (event) {
+            const transcript = event.results[event.resultIndex][0].transcript;
+            console.log(event);
+            // speak(transcript);
+        };
+
+        // Start recognition
+        recognition.start();
+
+        // Function to speak the recognized text
+        function speak(text) {
+            const synth = window.speechSynthesis;
+            const utterThis = new SpeechSynthesisUtterance(text);
+            utterThis.lang = 'en-US';  // Language settings
+            synth.speak(utterThis);
+        }
+
+        // Error handling
+        recognition.onerror = function (event) {
+            console.error('Error occurred in recognition: ' + event.error);
+        };
+
+        recognition.onend = function () {
+            console.log('Speech recognition service disconnected');
+            recognition.start();  // Restart recognition if it ends
+        };
+    </script>
+</body>
+
+</html>
